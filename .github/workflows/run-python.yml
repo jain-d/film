@@ -1,4 +1,4 @@
-name: Run Python Script
+name: Is It Listed
 
 on:
   schedule:
@@ -18,8 +18,11 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install network tool
-        run: pip install --upgrade pip httpx
+      - name: Upgrade pip
+        run: pip install --upgrade pip
+        
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
-      - name: Check For Shows
+      - name: Check for shows
         run: python film.py

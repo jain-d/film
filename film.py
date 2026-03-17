@@ -1,5 +1,16 @@
+import os
 import httpx
-import json
+import logging
+from twilio.rest import Client as TwilioClient
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
+og_number = os.getenv("OG_NUMBER")
+dj_number = os.getenv("MY_NUMBER")
+mb_number = os.getenv("MB_NUMBER")
+account_sid = os.getenv("TWILIO_ACCOUNT_SID")
+auth_token = os.getenv("TWILIO_AUTH_TOKEN")
+tw_client = TwilioClient(account_sid, auth_token)
 
 site_headers = {
     "Accept": "application/json, text/plain, */*",
@@ -26,16 +37,22 @@ site_headers = {
     "User-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0"
 }
 
-request = httpx.Request(method="POST", url="https://api3.pvrcinemas.com/api/v1/booking/content/mshowtimes", headers=site_headers, json={"city":"Hyderabad","lat":"17.1827790564","lng":"78.60351551","dated":"2026-03-18","experience":"pxl"})
+request = httpx.Request(method="POST", url="https://api3.pvrcinemas.com/api/v1/booking/content/mshowtimes", headers=site_headers, json={"city":"Hyderabad","lat":"17.1827790564","lng":"78.60351551","dated":"2026-03-20","experience":"pxl"})
 
-#print(request.headers)
 
 client = httpx.Client()
-
 response = client.send(request)
 dict_response = response.json()
 shows: list = dict_response["output"]["showTimeSessions"]
-print(json.dumps(shows[0]))
 
-#print(f"\n\033[32m{response.status_code}\033[0m\n\n{response.text}\n\n")
-#print(f"{response.request.method}\n{response.request.headers}\n\n{response.request.content}")
+if shows and shows[0]["movie"]["filmName"] == "DHURANDHAR THE REVENGE (HINDI) (A)" and shows[0]["movieCinemaSessions"][0]["cinema"]["theatreId"] == "371":
+    logging.warning("LISTING FOUND")
+    call_one = tw_client.calls.create(to=dj_number, from_=og_number, twiml="<Response><Say>The show is Listed. BOOK NOW. over and out.</Say></Response>")
+    message_one = tw_client.messages.create(to=dj_number, from_=og_number, body="The show is listed. BOOK NOW!")
+    """
+    call_two = tw_client.calls.create(to=mb_number, from_=og_number, twiml="<Response><Say>The show is Listed. BOOK NOW. over and out.</Say></Response>")
+    message_two = tw_client.messages.create(to=mb_number, from_=og_number, body="The show is listed. BOOK NOW!")
+        """
+else:
+    logging.info("NO LISTING")
+
